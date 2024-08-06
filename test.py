@@ -1,3 +1,6 @@
+
+# Import Libraries
+
 import cv2
 import numpy as np
 import os
@@ -5,6 +8,8 @@ from ultralytics import YOLO
 import torch
 
 model = YOLO(r'runs\detect\train3\weights\best.pt')
+
+# Labels  
 
 class_labels = {
     0: 'bus',
@@ -15,6 +20,8 @@ class_labels = {
     5: 'others'
 }
 
+# Colours
+
 colors = {
     'bus': (0, 255, 0),
     'car': (255, 0, 0),
@@ -23,6 +30,8 @@ colors = {
     'long vehicle': (255, 0, 255),
     'others': (0, 255, 255)
 }
+
+# Bounding Box and Label To it
 
 def draw_bounding_boxes(frame, detections, counts):
     for detection in detections:
@@ -39,18 +48,20 @@ def draw_bounding_boxes(frame, detections, counts):
         cv2.putText(frame, f'{label}: {count}', (frame.shape[1] - 200, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.9, colors[label], 2)
         y_offset += 30
 
+# Process the images 
+
 def process_image(image_path, output_path, conf=0.2):
     frame = cv2.imread(image_path)
-    results = model.predict(frame, conf=conf, save=False, device=0)  # Use predict with confidence threshold
+    results = model.predict(frame, conf=conf, save=False, device=0)  
 
     detections = []
     counts = {label: 0 for label in class_labels.values()}
     for result in results[0].boxes:
-        box = result.xyxy[0].cpu().numpy().astype(int)  # Get the box coordinates
-        class_id = int(result.cls[0].cpu().numpy())  # Get the class id
-        confidence = result.conf[0].cpu().numpy()  # Get the confidence
+        box = result.xyxy[0].cpu().numpy().astype(int) 
+        class_id = int(result.cls[0].cpu().numpy())  
+        confidence = result.conf[0].cpu().numpy() 
         if confidence < conf:
-            continue  # Skip detections below confidence threshold
+            continue  
         label = class_labels[class_id]
 
         detections.append({'class': class_id, 'box': box})
@@ -58,7 +69,9 @@ def process_image(image_path, output_path, conf=0.2):
 
     draw_bounding_boxes(frame, detections, counts)
     cv2.imwrite(output_path, frame)
-    del frame, results, detections, counts  # Free up memory
+    del frame, results, detections, counts  
+
+# main file making output folder if not and giving the process_image function to make folder path run from model_file path
 
 def main(input_folder, output_folder, conf=0.1):
     if not os.path.exists(output_folder):
@@ -70,7 +83,7 @@ def main(input_folder, output_folder, conf=0.1):
 
         if filename.endswith(('.jpg', '.jpeg', '.png')):
             process_image(file_path, output_path, conf)
-            torch.cuda.empty_cache()  # Free up GPU memory after processing each image
+            torch.cuda.empty_cache() 
 
 if __name__ == '__main__':
     input_folder = r'D:\Users\abhay\Downloads\Car_Count_GE\testing_images\valid\images'
